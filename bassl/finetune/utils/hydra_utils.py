@@ -101,7 +101,7 @@ def infer_and_assert_hydra_config(cfg):
     # dataset-specific paths
     cfg.PROJ_ROOT = os.environ["PYTHONPATH"]
     if cfg.DATASET == "movienet":
-        cfg.DATA_PATH = "./data/movienet"
+        cfg.DATA_PATH = os.path.join(cfg.PROJ_ROOT, "data/movienet")
         cfg.IMG_PATH = os.path.join(cfg.DATA_PATH, "240P_frames")
         cfg.FEAT_PATH = os.path.join(cfg.DATA_PATH, "features")
         cfg.ANNO_PATH = os.path.join(cfg.DATA_PATH, "anno")

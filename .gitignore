@@ -1,0 +1,7 @@
+# Certain folders
+**/__pycache__
+# **/*.sh
+anno_old/
+**/logs/
+**/wandb/
+**/*.ckpt

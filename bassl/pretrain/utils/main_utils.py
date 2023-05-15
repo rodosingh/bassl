@@ -51,6 +51,7 @@ def load_pretrained_config(cfg):
 
     # set for mode of 'extract shot representation'
     pretrained_cfg.MODE = cfg.MODE
+    pretrained_cfg.USE_RAW_SHOT = cfg.USE_RAW_SHOT
     pretrained_cfg.DISTRIBUTED.NUM_NODES = 1
     pretrained_cfg.LOAD_FROM = load_from
     pretrained_cfg = infer_and_assert_hydra_config(pretrained_cfg)

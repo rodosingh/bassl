@@ -37,6 +37,28 @@ def apply_random_seed(cfg):
         pl.seed_everything(cfg.SEED, workers=True)
 
 
+def load_finetuned_config(cfg):
+    ckpt_root = cfg.CKPT_PATH
+    load_from = cfg.LOAD_FROM
+    with open(os.path.join(ckpt_root, load_from, "config.json"), "r") as fopen:
+        finetuned_cfg = json.load(fopen)
+        finetuned_cfg = easydict.EasyDict(finetuned_cfg)
+
+    # override configuration of pre-trained model
+    cfg.MODEL = finetuned_cfg.MODEL
+    # Here finetuned and pre-trained models are the same. Thus their configs
+    # cfg.PRETRAINED_LOAD_FROM = finetuned_cfg.PRETRAINED_LOAD_FROM
+
+    cfg.TRAIN.USE_SINGLE_KEYFRAME = False
+    cfg.MODEL.contextual_relation_network.params.trn.pooling_method = "center"
+
+    # override neighbor size of an input sequence of shots
+    sampling = finetuned_cfg.LOSS.sampling_method.name
+    nsize = finetuned_cfg.LOSS.sampling_method.params[sampling]["neighbor_size"]
+    cfg.LOSS.sampling_method.params["sbd"]["neighbor_size"] = nsize
+
+    return cfg
+
 def load_pretrained_config(cfg):
     load_from = cfg.PRETRAINED_LOAD_FROM
     ckpt_root = cfg.PRETRAINED_CKPT_PATH
@@ -87,7 +109,8 @@ def init_model(cfg):
             cfg=cfg,
             shot_encoder=shot_encoder,
             crn=crn,
-            checkpoint_path=os.path.join(cfg.CKPT_PATH, cfg.LOAD_FROM, "model-v1.ckpt"),
+            checkpoint_path=os.path.join(
+                cfg.CKPT_PATH, cfg.LOAD_FROM, "finetune-model-epoch=14.ckpt"),
             strict=False,
         )
     elif "PRETRAINED_LOAD_FROM" in cfg and len(cfg.PRETRAINED_LOAD_FROM) > 0:
@@ -121,7 +144,21 @@ def init_trainer(cfg):
         os.makedirs(ckpt_path, exist_ok=True)
         callbacks.append(
             pl.callbacks.ModelCheckpoint(
-                dirpath=ckpt_path, monitor=None, filename="model"
+                dirpath=ckpt_path,
+                monitor="sbd_test/ap",
+                verbose=True,
+                filename="finetune-model-{epoch}",
+                save_top_k=2,
+                mode="max"
+            )
+        )
+        # early stopping callback
+        callbacks.append(
+            pl.callbacks.EarlyStopping(
+                monitor="sbd_test/ap",
+                patience=cfg.TRAIN.PATIENCE,
+                verbose=True,
+                mode="max",
             )
         )
         # learning rate callback

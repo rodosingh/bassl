@@ -119,7 +119,7 @@ def infer_and_assert_hydra_config(cfg):
     cfg.CKPT_PATH = os.path.join(cfg.PROJ_ROOT, "pretrain/ckpt")
     cfg.LOG_PATH = os.path.join(cfg.PROJ_ROOT, "pretrain/logs")
     if cfg.DATASET == "movienet":
-        cfg.DATA_PATH = "./data/movienet"
+        cfg.DATA_PATH = os.path.join(cfg.PROJ_ROOT, "data/movienet")
         cfg.IMG_PATH = os.path.join(cfg.DATA_PATH, "240P_frames")
         cfg.ANNO_PATH = os.path.join(cfg.DATA_PATH, "anno")
         cfg.FEAT_PATH = os.path.join(cfg.DATA_PATH, "features")

@@ -91,6 +91,6 @@ class NeighborShotSampler:
     def __call__(self, center_sid: int, total_num_shot: int):
         # total number of shots = 2 * neighbor_size + 1
         shot_idx = center_sid + np.arange(-self.neighbor_size, self.neighbor_size + 1)
-        shot_idx = np.clip(shot_idx, 0, total_num_shot)  # for out-of-boundary indices
+        shot_idx = np.clip(shot_idx, 0, total_num_shot-1)  # for out-of-boundary indices
 
         return shot_idx

@@ -14,7 +14,7 @@ sleep 10s
 # finetune the model
 # since CRN is trained from scratch, we use larger lr compared to lr in script
 # for BaSSL, which brings better performance (it is found after our hyper-parameter search)
-EXPR_NAME=finetune_${LOAD_FROM}
+EXPR_NAME=${LOAD_FROM}
 PYTHONPATH=${WORK_DIR} python3 ${WORK_DIR}/finetune/main.py \
 	config.TRAIN.BATCH_SIZE.effective_batch_size=1024 \
 	config.TRAIN.NUM_WORKERS=8 \

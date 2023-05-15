@@ -1,16 +1,20 @@
 # @package _global_
 config:
   DRY_RUN: False
-  EXPR_NAME: devel
+  EXPR_NAME: bassl
+  WANDB_LOGGING: False
+  WANDB_PROJECT: bassl
+  WANDB_RUN_NAME: ""
+  SEED: 23
   NOTE: ""
   LOAD_FROM: ""
-  LOGGING:
-    LOG_FREQ: 100
-    CKPT_FREQ: -1  # -1: save last epoch model only.
+  # LOGGING:
+  #   LOG_FREQ: 100
+  #   CKPT_FREQ: -1  # -1: save last epoch model only.
   TRAINER:
     accelerator: ddp
     precision: 32
-    max_epochs: 20
+    max_epochs: 50
     terminate_on_nan: True
     flush_logs_every_n_steps: 100
     num_sanity_val_steps: 0
@@ -49,6 +53,7 @@ config:
         std: [0.229, 0.224, 0.225]
     BATCH_SIZE:
       effective_batch_size: 1024
+    PATIENCE: 12
     COLLATE_FN: default_collator
     NUM_WORKERS: 8
     PIN_MEMORY: False

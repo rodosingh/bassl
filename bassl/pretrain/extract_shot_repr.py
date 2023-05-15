@@ -5,7 +5,7 @@
 # Licensed under the Apache License, Version 2.0 [see LICENSE for details]
 # ------------------------------------------------------------------------------------
 
-import logging
+import logging, ipdb
 
 from pretrain.utils.hydra_utils import print_cfg
 from pretrain.utils.main_utils import (
@@ -33,7 +33,6 @@ def main():
 
     # init trainer
     cfg, trainer = init_trainer(cfg)
-
     # train
     logging.info(f"Start Inference: {cfg.LOAD_FROM}")
     trainer.test(model, test_dataloaders=test_loader)

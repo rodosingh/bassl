@@ -7,12 +7,14 @@
 import json
 import logging
 import os
-
+import typing
 import einops
 import pytorch_lightning as pl
+import wandb
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
 from finetune.utils.hydra_utils import save_config_to_disk
 from finetune.utils.metric import (
     AccuracyMetric,
@@ -28,7 +30,10 @@ class FinetuningWrapper(pl.LightningModule):
     def __init__(self, cfg, shot_encoder, crn):
         super().__init__()
         self.cfg = cfg
-
+        if self.cfg.WANDB_LOGGING:
+            wandb.init(name=self.cfg.WANDB_RUN_NAME,
+                       project=self.cfg.WANDB_PROJECT,
+                       config=self.cfg)
         # build model components
         self.shot_encoder = shot_encoder
         self.crn = crn
@@ -253,8 +258,10 @@ class FinetuningWrapper(pl.LightningModule):
                 logger=True,
                 sync_dist=True,
             )
-        score = {k: v.item() for k, v in score.items()}
+        score = {f"sbd_test/{k}": v.item() for k, v in score.items()}
         self.print(f"\nTest Score: {score}")
+        if self.cfg.WANDB_LOGGING:
+            wandb.log(score)
 
         # reset all metrics
         self.acc_metric.reset()
@@ -272,6 +279,18 @@ class FinetuningWrapper(pl.LightningModule):
 
     def test_epoch_end(self, test_step_outputs):
         return self.validation_epoch_end(test_step_outputs)
+
+    def predict_step(self, batch: typing.Dict[str, typing.Union[typing.List[str], torch.Tensor]],
+                     batch_idx: int, dataloader_idx: int) -> torch.Tensor:
+        """
+        Predict the probability of shot-boundary
+        being scene-boundary.
+        """
+        inputs = batch["video"]
+        outputs = self.shared_step(inputs)
+        prob = F.softmax(outputs, dim=1)
+        preds = prob[:, 1] #> 0.5
+        return preds
 
     def exclude_from_wt_decay(self, named_params, weight_decay, skip_list):
         params = []

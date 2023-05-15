@@ -79,9 +79,7 @@ class BaseDataset(Dataset):
         return video, len(sid)
 
     def init_transform(self, cfg):
-        if self.mode == "extract_shot":
-            self.transform = get_transform(cfg.TEST.TRANSFORM)
-        elif self.mode == "inference":
+        if self.mode in ["extract_shot", "inference"]:
             self.transform = get_transform(cfg.TEST.TRANSFORM)
         elif self.mode in ["pretrain", "finetune"]:
             if self.is_train:

@@ -3,6 +3,7 @@
 """
 
 import json
+import ipdb
 from collections import defaultdict
 from typing import Dict
 
@@ -175,14 +176,13 @@ class MovieNetMetric(torchmetrics.Metric):
         self.add_state("sid_data", default=[], dist_reduce_fx="cat")
         self.add_state("pred_data", default=[], dist_reduce_fx="cat")
         self.add_state("gt_data", default=[], dist_reduce_fx="cat")
-
         self.vid2idx = json.load(
             open(
-                "bassl/data/movienet/anno/vid2idx.json", "r",
+                "../bassl/data/movienet/anno/vid2idx.json", "r",
             )
         )
         self.idx2vid = {idx: vid for vid, idx in self.vid2idx.items()}
-        self.shot_path = "bassl/data/movienet/scene318/shot_movie318"
+        self.shot_path = "../bassl/data/movienet/scene318/shot_movie318"
 
     def update(self, vid, sid, pred, gt):
         # assert isinstance(vid, torch.Tensor)

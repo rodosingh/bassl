@@ -7,7 +7,7 @@
 import logging
 import os
 import random
-
+    
 import einops
 import ndjson
 import numpy as np
@@ -20,19 +20,30 @@ class MovieNetDataset(BaseDataset):
         super(MovieNetDataset, self).__init__(cfg, mode, is_train)
 
         logging.info(f"Load Dataset: {cfg.DATASET}")
-        if mode == "finetune" and not self.use_raw_shot:
-            assert len(self.cfg.PRETRAINED_LOAD_FROM) > 0
-            self.shot_repr_dir = os.path.join(
-                self.cfg.FEAT_PATH, self.cfg.PRETRAINED_LOAD_FROM
-            )
+        if not self.use_raw_shot:
+            if mode == "finetune":
+                assert len(self.cfg.PRETRAINED_LOAD_FROM) > 0
+                self.shot_repr_dir = os.path.join(
+                    self.cfg.FEAT_PATH, self.cfg.PRETRAINED_LOAD_FROM
+                )
+            elif mode == "inference":
+                assert len(self.cfg.LOAD_FROM) > 0
+                self.shot_repr_dir = os.path.join(
+                    self.cfg.FEAT_PATH, self.cfg.LOAD_FROM
+                )
 
     def load_data(self):
         self.tmpl = "{}/shot_{}_img_{}.jpg"  # video_id, shot_id, shot_num
-        if self.mode == "extract_shot":
+        if self.mode in ["extract_shot", "inference"]:
+            which_file = "anno.trainvaltest.ndjson" \
+                        if self.mode == "extract_shot" else "anno.inference.ndjson"
             with open(
-                os.path.join(self.cfg.ANNO_PATH, "anno.trainvaltest.ndjson"), "r"
+                os.path.join(self.cfg.ANNO_PATH, which_file), "r"
             ) as f:
                 self.anno_data = ndjson.load(f)
+            self.use_raw_shot = self.cfg.USE_RAW_SHOT
+            if not self.use_raw_shot:
+                self.tmpl = "{}/shot_{}.npy"  # video_id, shot_id
 
         elif self.mode == "pretrain":
             if self.is_train:
@@ -210,15 +221,21 @@ class MovieNetDataset(BaseDataset):
 
                 _video.append(shot)
             video = torch.stack(_video, dim=0)
-
+        # print("Video shape in one get-item: ", video.shape)
+        # print("Shot-Indices in one get-item: ", shot_idx)
+        # print(f"Video ID: {vid}, Shot ID: {sid}, Num Shots: {num_shots}\n")
+        
         payload = {
             "idx": idx,
             "vid": vid,
             "sid": sid,
-            "video": video,
-            "label": abs(data["boundary_label"]),  # ignore -1 label.
+            "video": video
         }
-
+        if self.mode == "finetune":
+            payload.update({"label": abs(data["boundary_label"])}) # ignore -1 label.
+        elif self.mode == "inference":
+            payload.update({"nsids": shot_idx})
+        
         return payload
 
     def _getitem_for_sbd_eval(self, idx: int):
@@ -239,3 +256,6 @@ class MovieNetDataset(BaseDataset):
                 return self._getitem_for_finetune(idx)
             else:
                 return self._getitem_for_sbd_eval(idx)
+
+        elif self.mode == "inference":
+            return self._getitem_for_sbd_eval(idx)
